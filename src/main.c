@@ -6,36 +6,28 @@
 
 typedef struct Segment {
     Vector2 start;
-    Vector2 end;
+    Vector2 end;    // "private"
     size_t length;
-    int angle;
-    struct Segment *parent;
+    float angle;
+    struct Segment *child;
 } Segment;
 
-void draw_segment(Segment *segment) {
-    const Vector2 origin = {(float)GetScreenWidth()/2, (float)GetScreenHeight()/2};
+void update_segment(Segment *segment) {
+    segment->angle += 0.01;
 
-    if(segment->parent != NULL)
-        segment->start = segment->parent->end;
-
-    segment->end = (Vector2){
+    Vector2 delta_line = {
         segment->length * cos(segment->angle),
         segment->length * sin(segment->angle),
     };
-    segment->end = Vector2Add(segment->start, segment->end);
+    segment->end = Vector2Add(segment->start, delta_line);
 
-    Vector2 start = Vector2Add(segment->start, origin);
-    Vector2 end = Vector2Add(segment->end, origin);
-
-    DrawLineEx(start, end, 5.0, RAYWHITE);
-
-    // printf("start: %f, %f\nend: %f, %f\nlength: %ld\n angle: %d\n\n\n",
-    //         start.x, start.y, end.x, end.y, segment->length, segment->angle);
+    if(segment->child != NULL)
+        segment->child->start = segment->end;
 }
 
 void draw_segments(Segment *segment, size_t amount) {
     for(size_t i = 0; i < amount; i++) {
-        draw_segment(&segment[i]);
+        DrawLineEx(segment[i].start, segment[i].end, 5.0, segment[i].child != NULL ? RAYWHITE : GREEN);
     }
 }
 
@@ -43,14 +35,20 @@ int main(void) {
     InitWindow(800, 600, "kinematics");
     SetTargetFPS(60);
 
-    Segment a = { {0.0f, 0.0f}, {0, 0}, 100, 0, NULL};
-    Segment b = { {0.0f, 0.0f}, {0, 0}, 100, 0, &a};
+    const Vector2 origin = {(float)GetScreenWidth()/2, (float)GetScreenHeight()/2};
+
+    Segment b = { {0.0, 0.0}, {0, 0}, 100, 1.4, NULL};
+    Segment a = { origin, {0, 0}, 100, 0, &b};
     Segment segments[2] = { a, b };
+    segments[0].child = &segments[1];
 
     while(!WindowShouldClose()) {
+        for(size_t i = 0; i < 2; i++)
+            update_segment(segments + i);
+
         BeginDrawing();
-            draw_segments(segments, 2);
             ClearBackground(GRAY);
+            draw_segments(segments, 2);
         EndDrawing();
     }
 
