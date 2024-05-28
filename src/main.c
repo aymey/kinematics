@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define AMOUNT 10
+#define AMOUNT 5
 #define LENGTH 100
-#define ORIGIN Vector2Zero()
+#define ORIGIN (Vector2){GetScreenWidth()/2.0, GetScreenHeight()/2.0}
 #define SEGMENT(start, length, child) (Segment){start, {0.0f, 0.0f}, length, 0.0f, child}
 
 typedef struct Segment {
@@ -37,6 +37,11 @@ void calculate_end(Segment *segment) {
     segment->end = Vector2Add(segment->start, delta_line);
 }
 
+void force_start(Segment *segment, Vector2 start) {
+    segment->start = start;
+    calculate_end(segment);
+}
+
 void update_segment(Segment *segment) {
     if(segment->child != NULL)
         follow(segment, segment->child->start);
@@ -46,10 +51,14 @@ void update_segment(Segment *segment) {
     calculate_end(segment);
 }
 
-void draw_segments(Segment *segment, size_t amount) {
-    for(size_t i = 0; i < amount; i++) {
-        DrawLineEx(segment[i].start, segment[i].end, 5.0, RAYWHITE);
-    }
+void draw_segments(Segment *segments, size_t amount) {
+    force_start(&segments[amount-1], ORIGIN);
+
+    for(size_t i = amount-2; i > 0; i--)
+        force_start(&segments[i], segments[i+1].end);
+
+    for(size_t i = 0; i < amount; i++)
+        DrawLineEx(segments[i].start, segments[i].end, 5.0, RAYWHITE);
 }
 
 int main(void) {
