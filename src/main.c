@@ -4,16 +4,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define AMOUNT 20
-#define LENGTH 10
-#define SEGMENT(start, length, child) (Segment){start, {0.0f, 0.0f}, length, 0.0f, 0.0f, child}
+#define AMOUNT 10
+#define LENGTH 100
+#define ORIGIN Vector2Zero()
+#define SEGMENT(start, length, child) (Segment){start, {0.0f, 0.0f}, length, 0.0f, child}
 
 typedef struct Segment {
     Vector2 start;
-    Vector2 end;    // "private"
+    Vector2 end;
     size_t length;
-    double absolute_angle;   // absolue angle. inherits from parent
-    double angle;            // relative angle. unique & disconnected
+    double angle;
     struct Segment *child;
 } Segment;
 
@@ -29,21 +29,19 @@ void follow(Segment *segment, Vector2 target) {
 }
 
 void calculate_end(Segment *segment) {
-    double theta = segment->angle + segment->absolute_angle;
+    double theta = segment->angle;
     Vector2 delta_line = {
         segment->length * cos(theta),
         segment->length * sin(theta),
     };
     segment->end = Vector2Add(segment->start, delta_line);
-    // segment->angle = theta;
 }
 
 void update_segment(Segment *segment) {
-    if(segment->child != NULL) {
+    if(segment->child != NULL)
         follow(segment, segment->child->start);
-    } else {
+    else
         follow(segment, GetMousePosition());
-    }
 
     calculate_end(segment);
 }
@@ -59,9 +57,9 @@ int main(void) {
     SetTargetFPS(60);
 
     Segment segments[AMOUNT];
-    segments[0] = SEGMENT(Vector2Zero(), LENGTH, NULL);
+    segments[0] = SEGMENT(ORIGIN, LENGTH, NULL);
     for(size_t i = 1; i < AMOUNT; i++)
-        segments[i] = SEGMENT(Vector2Zero(), LENGTH, &segments[i-1]);
+        segments[i] = SEGMENT(ORIGIN, LENGTH, &segments[i-1]);
 
     while(!WindowShouldClose()) {
         for(size_t i = 0; i < AMOUNT; i++)
